@@ -1,0 +1,31 @@
+# ==========================================
+# Configuration de l'Agent IA Médical
+# ==========================================
+
+# Chemin vers le dossier contenant les dossiers des patients
+data_dir: "data/patients"
+
+# Configuration du modèle de vision (MONAI)
+model:
+  weights_path: "models/weights/tumor_densenet.pth"
+  image_size: [128, 128, 128]
+
+# Configuration du service d'envoi d'emails
+email:
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  # Remplacez ceci par votre propre adresse email pour tester la réception
+  doctor_email: "votre_email_de_test@gmail.com" 
+
+llm:
+  provider: "groq" # ou "azure", "openai", etc.
+  model_name: "llama-3.3-70b-versatile" # ou "mixtral-8x7b-32768"
+  temperature: 0.2
+  max_tokens: 1024
+
+
+
+model:
+  # On pointe vers le vrai fichier .pt du bundle BraTS
+  weights_path: "models/brats_mri_segmentation/models/model.pt"
+  device: "cpu" # Si vous n'avez pas de GPU NVIDIA, laissez "cpu"

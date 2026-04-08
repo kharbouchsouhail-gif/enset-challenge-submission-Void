@@ -1,0 +1,81 @@
+# Environnement virtuel
+venv/
+env/
+ENV/
+.venv
+.env
+
+# Fichiers sensibles
+.env.local
+.env.*.local
+credentials.json
+secrets.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+logs/
+*.log
+
+# Données sensibles
+data/patients/*.nii
+data/patients/*.nii.gz
+data/patients/*.dcm
+data/results/
+data/reports/
+
+# Modèles (poids)
+models/*.pth
+models/*.pt
+models/*.pkl
+
+# IDE & Éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporaire
+*.tmp
+temp/
+*.bak
+
+# Git
+.git/
