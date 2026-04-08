@@ -1,10 +1,16 @@
-import yaml
+import os
 import sys
+import yaml
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Ensure the root project directory is in the Python path
-sys.path.append(str(Path(__file__).parent.parent))
+# --- FIX DU CHEMIN D'EXÉCUTION ---
+# Force le script à s'exécuter depuis le dossier racine "mri_agent_v2"
+# Cela évite que les rapports ne se créent dans le sous-dossier "scripts/"
+PROJECT_ROOT = Path(__file__).parent.parent
+os.chdir(PROJECT_ROOT)
+sys.path.append(str(PROJECT_ROOT))
+# ---------------------------------
 
 from app.core.agent import MedicalAIAgent
 
