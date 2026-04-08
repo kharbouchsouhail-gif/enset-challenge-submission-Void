@@ -211,7 +211,7 @@ class GradCAMTool:
 
         if self.save_html_3d:
             html_path = str(self.output_dir / f"{patient_name}_3D_model.html")
-            self._save_plotly_3d(cam_vol, html_path)
+            self._save_plotly_3d(mri_np, cam_vol, html_path) # Ajout de mri_np ici !
             output_files.append(html_path)
 
         return {"cam_volume": cam_vol, "output_files": output_files}
@@ -254,28 +254,74 @@ class GradCAMTool:
         except Exception as e:
             logger.error(f"❌ Erreur lors de la génération du GIF : {e}")
 
-    def _save_plotly_3d(self, cam_vol, output_path):
+    def _save_plotly_3d(self, mri_vol, cam_vol, output_path):
         try:
             import plotly.graph_objects as go
             from scipy.ndimage import zoom
+            import numpy as np
             
+            # Redimensionnement (zoom) pour que le navigateur ne plante pas
             zoom_factor = 64 / max(cam_vol.shape)
+            
             cam_down = zoom(cam_vol, zoom_factor)
+            mri_down = zoom(mri_vol, zoom_factor)
+            
+            # Normalisation stricte entre 0 et 1 pour les deux volumes
+            mri_down = (mri_down - mri_down.min()) / (mri_down.max() - mri_down.min() + 1e-8)
+            cam_down = (cam_down - cam_down.min()) / (cam_down.max() - cam_down.min() + 1e-8)
+            
+            # 🔪 TUEUR DE CUBE : On force tout ce qui n'est pas le cerveau ou la tumeur à ZÉRO absolu
+            mri_down[mri_down < 0.15] = 0.0  # Supprime le cube gris (l'air autour de la tête)
+            cam_down[cam_down < 0.60] = 0.0  # Ne garde que le cœur de la tumeur (les 40% les plus intenses)
             
             X, Y, Z = np.mgrid[0:cam_down.shape[0], 0:cam_down.shape[1], 0:cam_down.shape[2]]
             
-            fig = go.Figure(data=go.Volume(
+            # 🧠 COUCHE 1 : Le Cerveau (Fantôme transparent)
+            brain_trace = go.Volume(
+                x=X.flatten(), y=Y.flatten(), z=Z.flatten(),
+                value=mri_down.flatten(),
+                isomin=0.01,       # Affiche tout ce qui a survécu au filtre au-dessus
+                isomax=1.0,
+                opacity=0.15,      # Effet fantôme/verre
+                surface_count=15,
+                colorscale='Greys',
+                showscale=False,
+                hoverinfo='skip',
+                caps=dict(x_show=False, y_show=False, z_show=False) # 🚫 INTERDIT À PLOTLY DE DESSINER LES BORDS DU CUBE
+            )
+            
+            # 🔴 COUCHE 2 : La Tumeur en Rouge
+            tumor_trace = go.Volume(
                 x=X.flatten(), y=Y.flatten(), z=Z.flatten(),
                 value=cam_down.flatten(),
-                isomin=0.3,
+                isomin=0.61,       # Seuil d'affichage de la tumeur
                 isomax=1.0,
-                opacity=0.2,
-                surface_count=20,
-                colorscale='inferno'
-            ))
-            fig.update_layout(scene_xaxis_showticklabels=False, scene_yaxis_showticklabels=False, scene_zaxis_showticklabels=False)
+                opacity=0.9,       # Tumeur très visible (solide)
+                surface_count=15,
+                colorscale='Reds', # Couleur ROUGE pure
+                name='Tumeur',
+                showscale=False,
+                caps=dict(x_show=False, y_show=False, z_show=False) # 🚫 INTERDIT À PLOTLY DE DESSINER LES BORDS DU CUBE
+            )
+            
+            fig = go.Figure(data=[brain_trace, tumor_trace])
+            
+            # Nettoyage absolu de la scène (fond noir, aucune ligne, aucune grille)
+            fig.update_layout(
+                scene=dict(
+                    xaxis=dict(visible=False, showbackground=False),
+                    yaxis=dict(visible=False, showbackground=False),
+                    zaxis=dict(visible=False, showbackground=False),
+                    camera=dict(eye=dict(x=1.5, y=1.5, z=1.5))
+                ),
+                margin=dict(l=0, r=0, b=0, t=0),
+                paper_bgcolor='#000000', # Fond noir absolu pour faire ressortir le rouge et le gris
+                plot_bgcolor='#000000',
+                showlegend=False
+            )
+            
             fig.write_html(output_path)
-            logger.info(f"🌐 Modèle 3D HTML sauvegardé : {output_path}")
+            logger.info(f"🌐 Modèle 3D HTML (Cerveau + Tumeur Rouge) sauvegardé : {output_path}")
         except ImportError:
             logger.warning("⚠️ 'plotly' non installé. Ignorer la génération HTML 3D.")
         except Exception as e:
